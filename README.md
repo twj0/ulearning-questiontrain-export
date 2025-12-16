@@ -1,11 +1,11 @@
 
  # ulearning-questiontrain-export
 
- 从 **优学院 / DGUT LMS** 的「题库训练（Question Train / Practice）」页面导出题目，并整理为 **佛脚刷题** 所需的 JSON 格式（格式定义见 `tmpl.jsonc`）。
+ 从 **优学院 (DGUT)** 的「题库训练（Question Train / Practice）」页面导出题目，并整理为 **佛脚刷题** 所需的 JSON 格式（格式定义见 `tmpl.jsonc`）。
 
  本项目提供两条使用路线：
 
- - **路线 A：本地 Python 导出器（推荐）**
+ - **路线 A：本地 Python 导出器**
    - 适合：可重复运行、自动化、归档、批量导出。
  - **路线 B：油猴脚本（Tampermonkey）一键导出**
    - 适合：你已经在题目页面，直接点击按钮导出并下载 JSON，无需本地 Python 环境。
@@ -42,7 +42,7 @@
 
  ---
 
- ## 2. 项目原理（为什么这么做）
+ ## 2. 项目原理
 
  ### 2.1 题目不是写死在 HTML 里
 
@@ -55,7 +55,7 @@
 
  ### 2.2 从 HAR（网络记录）定位到核心 API
 
- 在 `network.har` 中可以看到题库训练页面的关键接口都在：
+使用 `F12` 刷新一下，在网络活动中可以看到题库训练页面的关键接口都在：
 
  `https://lms.dgut.edu.cn/utestapi/`
 
@@ -104,7 +104,7 @@
       - `USER_ID`（从 cookie `USERINFO` / `USER_INFO` 解析 `userId`）
     - 若 cookie 和 `.env` 冲突：**以 cookie 为准**。
     - 推荐用户手动在根目录放置：`cookie.json`（纯 JSON）。
-    - `cookie.jsonc` 仅作为演示文件（允许注释）。
+    - `cookie.jsonc` 仅作为演示文件(jsonc:json+comment(允许注释(coomment)))。
 
  2. **`.env` 文件**
     - 用户可以手动填写：`AUTHORIZATION / USER_ID / QT_ID / OC_ID / QT_TYPE`。
@@ -135,7 +135,7 @@
  │   └── exporter.py           # 写文件导出
  ├── .env.example              # 环境变量示例
  ├── tmpl.jsonc                # 目标 JSON 格式说明
- └── UserScript/_userscript.js # 油猴脚本（可选）
+ └── UserScript/_userscript.js # 油猴脚本
  ```
 
  ### 4.2 安装依赖
@@ -224,7 +224,7 @@
  ## 6. 隐私与安全
 
  - `AUTHORIZATION` 和 cookie 相当于登录凭证，**不要提交到仓库**、不要发给他人。
- - 本仓库的 `.gitignore` 已忽略：`.env`、`cookie.jsonc`、导出结果等。
+ - 本仓库的 `.gitignore` 已忽略：`.env`、~~`cookie.jsonc`~~(优学院的信息暴露就暴露吧，能帮我写作业就再好不过了)、导出结果等。
 
  ---
 
