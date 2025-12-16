@@ -3,6 +3,7 @@ Question formatter - convert to 佛脚刷题 JSON format
 """
 
 from typing import Optional
+import html
 import re
 
 
@@ -36,7 +37,7 @@ class QuestionFormatter:
         else:
             type_name = cls.TYPE_MAP.get(q_type, "选择题")
         
-        title = q.get('title', '').strip()
+        title = cls._strip_html(q.get('title', '')).strip()
         
         if type_name == "选择题":
             return cls._format_choice(title, items, user_answer)
@@ -78,7 +79,7 @@ class QuestionFormatter:
         options = []
         for i, item in enumerate(items):
             label = cls.OPTION_LABELS[i] if i < len(cls.OPTION_LABELS) else str(i)
-            option_text = item.get('title', '').strip()
+            option_text = cls._strip_html(item.get('title', '')).strip()
             options.append(f"{label}. {option_text}")
         
         # Join answer letters
@@ -122,7 +123,7 @@ class QuestionFormatter:
     def _format_fillblank(cls, title: str, answer: list) -> dict:
         """Format fill-in-the-blank question"""
         # Insert answers into blanks using {answer} format
-        formatted_title = title
+        formatted_title = cls._strip_html(title)
         
         if answer:
             # Find blanks (usually marked as _____ or ( ) or 【 】)
@@ -154,7 +155,7 @@ class QuestionFormatter:
     @classmethod
     def _format_essay(cls, title: str, answer: list) -> dict:
         """Format essay/short answer question"""
-        answer_str = '\n'.join(answer) if answer else ''
+        answer_str = '\n'.join([cls._strip_html(x) for x in answer]) if answer else ''
         
         return {
             "题型": "问答题",
@@ -162,6 +163,26 @@ class QuestionFormatter:
             "答案": answer_str,
             "解析": ""
         }
+
+    @staticmethod
+    def _strip_html(text: object) -> str:
+        s = '' if text is None else str(text)
+        if not s:
+            return ''
+        # Normalize common line break tags to newlines
+        s = re.sub(r"<\s*br\s*/?\s*>", "\n", s, flags=re.IGNORECASE)
+        # End of common blocks -> newline
+        s = re.sub(r"<\s*/\s*(p|div|li|tr)\s*>", "\n", s, flags=re.IGNORECASE)
+        # Remove all remaining tags
+        s = re.sub(r"<[^>]+>", "", s)
+        # Decode HTML entities (&nbsp; etc.)
+        s = html.unescape(s)
+        # Normalize line endings and excessive spaces per line
+        s = s.replace("\r\n", "\n").replace("\r", "\n")
+        s = re.sub(r"[\t\f\v]+", " ", s)
+        s = re.sub(r"[ \u00a0]+", " ", s)
+        s = re.sub(r"\n{3,}", "\n\n", s)
+        return s
     
     @classmethod
     def format_all(cls, questions: list[dict]) -> list[dict]:

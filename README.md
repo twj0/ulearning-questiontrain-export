@@ -1,7 +1,13 @@
-
- # ulearning-questiontrain-export
+# ulearning-questiontrain-export
 
  从 **优学院 (DGUT)** 的「题库训练（Question Train / Practice）」页面导出题目，并整理为 **佛脚刷题** 所需的 JSON 格式（格式定义见 `tmpl.jsonc`）。
+
+> 说明（关于“官方站/学校专线”的差异）：
+>
+> - 本仓库默认适配的是 **东莞理工（DGUT）专属线路**：`https://lms.dgut.edu.cn/utest/`（页面）与 `https://lms.dgut.edu.cn/utestapi/`（接口）。
+> - **优学院官方站**（`www.ulearning.cn`）与其他学校通常属于“同一套产品、多租户/多实例部署”。接口的**业务逻辑大概率相似**（例如同样存在 `answerSheet/questionList/answer`），但 **域名、路径前缀、鉴权 cookie 名称** 可能不同。
+> - 因为我无法保证官方站与 DGUT 的路径一模一样，所以 README 里把“怎么定位 base URL 与关键接口”的方法写得更详细，方便你或其他学校同学进行二次开发。
+> - 应该不是因为我懒得写
 
  本项目提供两条使用路线：
 
@@ -81,6 +87,26 @@
  - `Authorization` 请求头（通常来自 cookie `AUTHORIZATION` 或 `token`）
  - 同域 cookie（浏览器里天然具备；Python 版本通过 cookie 文件/环境变量提供）
 
+ ### 2.5 适配“官方站/其他学校域名”的思路（迁移指南）
+
+ 如果你使用的不是 `lms.dgut.edu.cn`（比如官方站 `www.ulearning.cn` 或其他学校域名），建议按下面流程迁移：
+
+ 1. 打开题库训练页面，按 `F12` -> Network，刷新页面。
+ 2. 在 Network 里搜索关键词：
+    - `utestapi` 或 `answerSheet` 或 `questionList`
+ 3. 记录你看到的接口基址（base URL），通常形态类似：
+    - `https://<your-domain>/utestapi/`
+    - 或 `https://<your-domain>/<prefix>/utestapi/`
+ 4. 验证以下接口是否存在（路径可能一致/也可能需要微调）：
+    - `GET /questionTraining/student/answerSheet`
+    - `GET /questionTraining/student/questionList`
+    - `POST /questionTraining/student/answer`（用于拿 `result.correctAnswer`）
+ 5. 验证鉴权方式：
+    - 请求头里是否需要 `Authorization`（以及是否需要 `Bearer xxx`）
+    - cookie 里是否仍然有 `USERINFO.userId`（我们用它当 `traceId`）
+
+ 只要你能在 Network 里看到这些请求成功（HTTP 200 + JSON `code` 正常），就基本可以把本项目的 `API_BASE` 与 cookie 解析逻辑迁移过去。
+
  ### 2.3 导出流程（我们的“思维”就是这条流水线）
 
  1. 从页面/配置中拿到：`qtId / ocId / qtType / traceId / Authorization`
@@ -91,6 +117,23 @@
     - 把答案映射合并到题目对象上
  4. 把平台题目 JSON 转成佛脚刷题 JSON
  5. 写出 `questions.json` / 或浏览器触发下载
+
+ ### 2.4 为什么题干里会有 `<br/>`（以及我们怎么处理）
+
+ 平台返回的题干/选项是富文本（HTML），例如：
+
+ - `...重大命<br />题...`
+
+ 如果导出时原样保留，阅读与搜索体验都会很差。
+
+ 因此我们在导出时做一次“HTML -> 纯文本”清洗：
+
+ - `<br>` / `<br/>` / `<br />`：转换成换行 `\n`
+ - `</p>` / `</div>` / `</li>` / `</tr>`：转换成换行 `\n`
+ - 其余标签：直接移除
+ - `&nbsp;` 等 HTML 实体：解码成正常字符
+
+ 性能方面：清洗是一次性线性扫描（`O(n)`），相对网络请求耗时可以忽略；并且文本更干净后通常更利于搜索。
 
  ---
 

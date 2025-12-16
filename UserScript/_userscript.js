@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         ulearning-questiontrain-export
 // @namespace    https://lms.dgut.edu.cn/
-// @version      0.1.1
-// @description  Export ULearning question training to 佛脚刷题 JSON and download
+// @version      0.1.2
+// @description  Export ULearning question training to 佛脚刷题 JSON and download (strip HTML tags)
 // @match        https://lms.dgut.edu.cn/utest/index.html*
 // @grant        GM_setClipboard
 // @grant        GM_notification
@@ -190,6 +190,29 @@
     return ['A'];
   }
 
+  function stripHtml(raw) {
+    if (raw === null || typeof raw === 'undefined') return '';
+    let s = String(raw);
+    if (!s) return '';
+    // Normalize common line breaks to \n
+    s = s.replace(/<\s*br\s*\/?\s*>/gi, '\n');
+    // End of common blocks -> newline
+    s = s.replace(/<\s*\/\s*(p|div|li|tr)\s*>/gi, '\n');
+    // Remove remaining tags
+    s = s.replace(/<[^>]+>/g, '');
+    // Decode HTML entities
+    const ta = document.createElement('textarea');
+    ta.innerHTML = s;
+    s = ta.value;
+    // Normalize line endings
+    s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    // Normalize spaces
+    s = s.replace(/[\t\f\v]+/g, ' ');
+    s = s.replace(/[ \u00a0]+/g, ' ');
+    s = s.replace(/\n{3,}/g, '\n\n');
+    return s;
+  }
+
   /**
    * Format raw question to 佛脚刷题 format.
    * NOTE: Output keys should follow tmpl.jsonc (Chinese keys).
@@ -209,7 +232,7 @@
     const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
     const items = Array.isArray(q.item) ? q.item : [];
-    const title = (q.title || '').trim();
+    const title = stripHtml(q.title).trim();
     const ans = Array.isArray(q.userAnswer) ? q.userAnswer : [];
 
     const looksLikeTrueFalse = (() => {
@@ -235,9 +258,10 @@
     if (finalType === '选择题') {
       const options = items.map((it, idx) => {
         const label = optionLabels[idx] || String(idx);
-        const text = (it && it.title ? String(it.title) : '').trim();
+        const text = stripHtml(it && it.title ? it.title : '').trim();
         return `${label}. ${text}`;
       });
+
       const answerStr = ans.length ? ans.slice().sort().join('') : '';
       return { '题型': '选择题', '题干': title, '选项': options, '答案': answerStr, '解析': '' };
     }
