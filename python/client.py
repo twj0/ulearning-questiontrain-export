@@ -3,6 +3,7 @@ ULearning API Client
 """
 
 import math
+import random
 import time
 import requests
 from typing import Optional
@@ -181,7 +182,12 @@ class ULearningClient:
 
         return ["A"]
 
-    def fetch_correct_answers(self, delay: float = 0.2, limit: int | None = None) -> dict[int, list[str]]:
+    def fetch_correct_answers(
+        self,
+        delay: float = 0.5,
+        limit: int | None = None,
+        max_retries: int = 5,
+    ) -> dict[int, list[str]]:
         """Fetch standard answers by auto-submitting dummy answers.
 
         Returns a map: questionId -> correctAnswer(list[str]).
@@ -206,7 +212,25 @@ class ULearningClient:
             q_stub = {"type": q_type}
             dummy = self._dummy_answer_for_question(q_stub)
 
-            resp = self.submit_answer(relation_id=qid, index=idx, answer=dummy)
+            last_err: Exception | None = None
+            resp: dict | None = None
+            for attempt in range(max_retries):
+                try:
+                    resp = self.submit_answer(relation_id=qid, index=idx, answer=dummy)
+                    break
+                except requests.exceptions.RequestException as e:
+                    last_err = e
+                    backoff = (delay * (2 ** attempt)) + random.uniform(0, max(delay, 0.1))
+                    print(f"Warning: submit_answer failed (idx={idx}, qid={qid}, attempt={attempt + 1}/{max_retries}): {e}. Sleep {backoff:.2f}s")
+                    time.sleep(backoff)
+
+            if resp is None:
+                raise Exception(f"submit_answer failed after {max_retries} retries: {last_err}")
+
+            # Some server responses use non-1/2 code to indicate auth issues.
+            if resp.get("code") == 2001:
+                raise Exception(f"API error: {resp.get('message')} (authorization/token expired?)")
+
             result = resp.get("result") or {}
             correct = result.get("correctAnswer")
             if isinstance(correct, list):

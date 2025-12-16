@@ -74,7 +74,17 @@
     const userInfoRaw = getCookie('USERINFO') || getCookie('USER_INFO');
     const userInfo = userInfoRaw ? safeJsonParse(userInfoRaw) : null;
     const userId = userInfo && userInfo.userId ? String(userInfo.userId) : '';
-    return { authorization, userId };
+    return { authorization: normalizeAuthorization(authorization), userId };
+  }
+
+  function normalizeAuthorization(raw) {
+    const v = (raw || '').trim();
+    if (!v) return '';
+    // Already has scheme
+    if (/^bearer\s+/i.test(v)) return v;
+    // Heuristic: JWT-like token -> Bearer
+    if (v.split('.').length >= 3) return `Bearer ${v}`;
+    return v;
   }
 
   /**
@@ -103,6 +113,9 @@
     }
     const data = await res.json();
     if (!data || data.code !== 1) {
+      if (data && data.code === 2001) {
+        throw new Error('API error: 缺少访问token (请重新登录页面，确保 cookie 里有 AUTHORIZATION；token 可能不等价于 AUTHORIZATION)');
+      }
       throw new Error(`API error: ${data && data.message ? data.message : 'unknown'}`);
     }
     return data;
@@ -139,6 +152,9 @@
     // This endpoint returns code=1 (correct) or code=2 (wrong). Both are valid for extracting correctAnswer.
     if (!data || typeof data.code === 'undefined') {
       throw new Error('API error: invalid response');
+    }
+    if (data.code === 2001) {
+      throw new Error('API error: 缺少访问token (请重新登录页面，确保 cookie 里有 AUTHORIZATION；token 可能不等价于 AUTHORIZATION)');
     }
     return data;
   }
