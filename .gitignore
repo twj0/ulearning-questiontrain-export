@@ -14,3 +14,4 @@ wheels/
 fetch_questions.py
 output/questions.json
 output/questions.txt
+*.json

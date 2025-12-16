@@ -32,6 +32,17 @@ def main():
         help="Practice URL like https://lms.dgut.edu.cn/utest/index.html?...#/questionTrain/practice/QT_ID/OC_ID/QT_TYPE",
     )
     parser.add_argument(
+        "--user-answer",
+        action="store_true",
+        help="Legacy mode: export user's submitted answers from answerSheet (does NOT submit answers).",
+    )
+    parser.add_argument(
+        "--correct-limit",
+        type=int,
+        default=None,
+        help="Limit how many questions to submit when exporting standard answers (for testing).",
+    )
+    parser.add_argument(
         "--output", "-o",
         default=None,
         help="Output directory (default: from .env or 'output')"
@@ -65,7 +76,14 @@ def main():
         
         # Fetch questions
         client = ULearningClient(config)
-        raw_questions = client.fetch_all_questions()
+        raw_questions = client.fetch_all_questions(include_user_answers=args.user_answer)
+
+        if not args.user_answer:
+            correct_map = client.fetch_correct_answers(limit=args.correct_limit)
+            for q in raw_questions:
+                qid = q.get("id")
+                if isinstance(qid, int) and qid in correct_map:
+                    q["userAnswer"] = correct_map[qid]
         
         # Format to 佛脚刷题 format
         print("Formatting questions...")

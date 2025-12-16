@@ -25,6 +25,8 @@ def run(
     cookie_file: str | None,
     practice_url: str | None,
     output_dir: str | None,
+    use_user_answers: bool,
+    correct_limit: int | None,
     export_raw: bool,
     export_txt: bool,
 ) -> int:
@@ -34,7 +36,19 @@ def run(
             config.output_dir = output_dir
 
         client = ULearningClient(config)
-        raw_questions = client.fetch_all_questions()
+
+        # Default: export standard answers (correctAnswer) by calling submit_answer.
+        # Legacy mode (--user-answer): export user's submitted answers (answerSheet.answer) without submitting.
+        raw_questions = client.fetch_all_questions(include_user_answers=use_user_answers)
+
+        if not use_user_answers:
+            # Collect standard answers by auto-submitting dummy answers.
+            # NOTE: this will write answer records to the training.
+            correct_map = client.fetch_correct_answers(limit=correct_limit)
+            for q in raw_questions:
+                qid = q.get("id")
+                if isinstance(qid, int) and qid in correct_map:
+                    q["userAnswer"] = correct_map[qid]
 
         formatted_questions = QuestionFormatter.format_all(raw_questions)
 
@@ -69,12 +83,34 @@ def main() -> None:
         default=None,
         help="Practice URL like https://lms.dgut.edu.cn/utest/index.html?...#/questionTrain/practice/QT_ID/OC_ID/QT_TYPE",
     )
+    parser.add_argument(
+        "--user-answer",
+        action="store_true",
+        help="Legacy mode: export user's submitted answers from answerSheet (does NOT submit answers).",
+    )
+    parser.add_argument(
+        "--correct-limit",
+        type=int,
+        default=None,
+        help="Limit how many questions to submit when exporting standard answers (for testing).",
+    )
     parser.add_argument("--output", default=None, help="Output directory")
     parser.add_argument("--raw", action="store_true", help="Also export raw API JSON")
     parser.add_argument("--txt", action="store_true", help="Also export a readable txt")
 
     args = parser.parse_args()
-    raise SystemExit(run(args.env, args.cookie, args.url, args.output, args.raw, args.txt))
+    raise SystemExit(
+        run(
+            args.env,
+            args.cookie,
+            args.url,
+            args.output,
+            args.user_answer,
+            args.correct_limit,
+            args.raw,
+            args.txt,
+        )
+    )
 
 
 if __name__ == "__main__":

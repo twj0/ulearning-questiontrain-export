@@ -162,6 +162,36 @@
  uv run python main.py --url "https://lms.dgut.edu.cn/utest/index.html?v=1765875491045#/questionTrain/practice/2674/134202/1" --txt
  ```
 
+ #### 方式 1.1：导出“标准答案版”（默认行为，会自动答题）
+
+ 通过 一些答题时候的网络活动 我们确认：提交答题接口会在响应中返回 `correctAnswer`（标准答案）。
+ 因此本项目将“标准答案导出”作为默认行为：程序会对每道题提交一个“随便答案”，从响应中收集 `correctAnswer`，并将导出的 `答案` 字段替换为标准答案。
+
+ 重要提示：
+
+ - **`--correct` 会写入你的答题记录**（平台会认为你做过这些题，正确率可能变化）。
+ - 如果你只想先验证功能，可以用 `--correct-limit` 限制只提交前 N 题。
+
+ 示例：
+
+ ```bash
+ # 仅测试前 20 题
+ uv run python main.py --url "https://lms.dgut.edu.cn/utest/index.html?v=...#/questionTrain/practice/2674/134202/1" --correct-limit 20
+
+ # 全量导出标准答案（会对全部题目提交一次答案）
+ uv run python main.py --url "https://lms.dgut.edu.cn/utest/index.html?v=...#/questionTrain/practice/2674/134202/1" --txt
+ ```
+
+ #### 方式 1.2：导出“用户作答答案版”（--user-answer）
+
+ 如果你想导出用户作答答案（不提交答案，不保证有值/不保证正确），可以使用 `--user-answer` 参数。
+
+ 示例：
+
+ ```bash
+ uv run python main.py --url "https://lms.dgut.edu.cn/utest/index.html?v=...#/questionTrain/practice/2674/134202/1" --user-answer --txt
+ ```
+
  #### 方式 2：只用 .env（完全手动）
 
  1) 复制 `.env.example` 为 `.env`
