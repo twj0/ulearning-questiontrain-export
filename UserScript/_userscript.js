@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         ULearning Export Helper
+// @name         ulearning-questiontrain-export
 // @namespace    https://lms.dgut.edu.cn/
 // @version      0.1.1
 // @description  Export ULearning question training to 佛脚刷题 JSON and download
