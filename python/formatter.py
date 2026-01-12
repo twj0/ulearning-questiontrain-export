@@ -175,8 +175,8 @@ class QuestionFormatter:
         s = re.sub(r"<\s*/\s*(p|div|li|tr)\s*>", "\n", s, flags=re.IGNORECASE)
         # Remove all remaining tags
         s = re.sub(r"<[^>]+>", "", s)
-        # Decode HTML entities (&nbsp; etc.)
-        s = html.unescape(s)
+        # Decode HTML entities (&nbsp; etc.) - call twice for double-encoded entities
+        s = html.unescape(html.unescape(s))
         # Normalize line endings and excessive spaces per line
         s = s.replace("\r\n", "\n").replace("\r", "\n")
         s = re.sub(r"[\t\f\v]+", " ", s)

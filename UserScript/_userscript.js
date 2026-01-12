@@ -200,8 +200,10 @@
     s = s.replace(/<\s*\/\s*(p|div|li|tr)\s*>/gi, '\n');
     // Remove remaining tags
     s = s.replace(/<[^>]+>/g, '');
-    // Decode HTML entities
+    // Decode HTML entities - decode twice for double-encoded entities (e.g. &amp;ldquo; -> &ldquo; -> ")
     const ta = document.createElement('textarea');
+    ta.innerHTML = s;
+    s = ta.value;
     ta.innerHTML = s;
     s = ta.value;
     // Normalize line endings

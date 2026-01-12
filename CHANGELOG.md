@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-01-12
+
+### Fixed
+
+- Fix double-encoded HTML entities not being decoded properly.
+  - Issue: Characters like `&ldquo;` `&lt;` `&gt;` appeared in exported text when the platform returned double-encoded entities (e.g. `&amp;ldquo;`).
+  - Solution: Call HTML entity decode twice to handle double-encoded cases.
+  - Affected: Python `formatter.py` and UserScript `_userscript.js`.
+  - See: `docs/double-encoded-html-entities.md` for details.
+
 ## [0.1.2] - 2025-12-16
 
 ### Changed

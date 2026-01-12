@@ -90,13 +90,18 @@ class Config:
         if not oc_id:
             raise ValueError("OC_ID is required (from practice URL, cookie or .env)")
 
+        # Determine base URL based on domain detection
+        base_url = merged.get("BASE_URL")
+        if not base_url:
+            base_url = _detect_base_url(cookie_values, practice_url)
+        
         return cls(
             authorization=authorization,
             user_id=int(user_id),
             qt_id=int(qt_id),
             oc_id=int(oc_id),
             qt_type=int(merged.get("QT_TYPE", "1")),
-            base_url=merged.get("BASE_URL", "https://lms.dgut.edu.cn/utestapi"),
+            base_url=base_url,
             output_dir=merged.get("OUTPUT_DIR", "output"),
         )
 
@@ -153,3 +158,31 @@ def _parse_practice_url(url: str) -> dict[str, str]:
     if not m:
         return {}
     return {"QT_ID": m.group(1), "OC_ID": m.group(2), "QT_TYPE": m.group(3)}
+
+
+def _detect_base_url(cookie_values: dict[str, str], practice_url: str | None = None) -> str:
+    """
+    Detect the appropriate base URL based on cookies and practice URL.
+    
+    Priority:
+    1. If practice URL contains ulearning.cn -> use official platform
+    2. If cookies contain ulearning.cn domains -> use official platform  
+    3. Default to DGUT platform
+    
+    Returns:
+        str: The detected base URL
+    """
+    # Check practice URL for official platform indicators
+    if practice_url:
+        if "ulearning.cn" in practice_url or "www.ulearning.cn" in practice_url:
+            return "https://utestapi.ulearning.cn"
+        elif "lms.dgut.edu.cn" in practice_url:
+            return "https://lms.dgut.edu.cn/utestapi"
+    
+    # Check cookies for domain indicators
+    for cookie_name, cookie_value in cookie_values.items():
+        if cookie_value and ("ulearning.cn" in cookie_value or "www.ulearning.cn" in cookie_value):
+            return "https://utestapi.ulearning.cn"
+    
+    # Default to DGUT
+    return "https://lms.dgut.edu.cn/utestapi"
