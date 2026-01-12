@@ -148,6 +148,7 @@
  为了让用户尽量少操作，本项目支持 **三种来源** 的信息合并，优先级从高到低：
 
  1. **cookie 文件（`cookie.json` / `cookie.jsonc`）**（最高优先级）
+ > 建议在浏览器的拓展商店搜索"cookie editor", 然后 Export Json
     - 提供：
       - `AUTHORIZATION`（从 cookie `AUTHORIZATION` 或 `token`）
       - `USER_ID`（从 cookie `USERINFO` / `USER_INFO` 解析 `userId`）
@@ -155,10 +156,10 @@
     - 推荐用户手动在根目录放置：`cookie.json`（纯 JSON）。
     - `cookie.jsonc` 仅作为演示文件(jsonc:json+comment(允许注释(coomment)))。
 
- 2. **`.env` 文件**
+ 3. **`.env` 文件**
     - 用户可以手动填写：`AUTHORIZATION / USER_ID / QT_ID / OC_ID / QT_TYPE`。
 
- 3. **练习链接 `PRACTICE_URL`**
+ 4. **练习链接 `PRACTICE_URL`**
     - 只负责从链接中解析：`QT_ID / OC_ID / QT_TYPE`。
     - 示例：
       - `https://lms.dgut.edu.cn/utest/index.html?v=1765875491045#/questionTrain/practice/2674/134202/1`
